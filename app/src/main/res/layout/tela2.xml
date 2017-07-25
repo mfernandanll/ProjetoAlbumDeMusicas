@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="127dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvSTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Title"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+
+            <TextView
+                android:id="@+id/tvSAuthor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Author" />
+
+            <TextView
+                android:id="@+id/tvSAlbum"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Album" />
+
+            <TextView
+                android:id="@+id/tvSDuration"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Durantion" />
+
+            <RatingBar
+                android:id="@+id/ratingBar"
+                style="@android:style/Widget.DeviceDefault.Light.RatingBar.Small"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

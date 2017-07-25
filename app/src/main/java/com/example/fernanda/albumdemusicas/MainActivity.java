@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -15,13 +16,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,11 +24,12 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private final String URL_TO_HIT = "https://jsonparsingdemo-cec5b.firebaseapp.com/jsonData/moviesData.txt";
+    private final String URL_TO_HIT = "https://indt-playlists.herokuapp.com/api/playlists";
     //private TextView tvData;
     private ListView lvAlbums;
 
@@ -48,9 +43,10 @@ public class MainActivity extends AppCompatActivity {
         new JSONtask().execute(URL_TO_HIT);
 
     }
-
+    //Construindo a AsyncTask para que a conexão com a internet possa ser feita
     public class JSONtask extends AsyncTask<String, String, List<AlbumModels>> {
         @Override
+        //conectando e baixando da internet os dados do JSON na Thread Background
         protected List<AlbumModels> doInBackground(String... params) {
             HttpURLConnection connection = null;
             BufferedReader reader = null;
@@ -68,29 +64,31 @@ public class MainActivity extends AppCompatActivity {
                     buffer.append(line);
                 }
                 String finalJSON = buffer.toString();
-                JSONObject parentObject = new JSONObject();
-                JSONArray parentArray = new JSONArray(finalJSON);
-                parentArray = parentObject.getJSONArray("");
+                Log.e("JSON", finalJSON);
 
                 List<AlbumModels> albumModelsList = new ArrayList<>();
                 Gson gson = new Gson();
 
+                AlbumModels[] wrapper = gson.fromJson(finalJSON, AlbumModels[].class);
+                albumModelsList.addAll(Arrays.asList(wrapper));
 
-                //List<MovieModel> movieModelList = new ArrayList<>();
-                for(int i=0; i<parentArray.length(); i++){
-                    JSONObject finalObject = parentArray.getJSONObject(i);
-                    AlbumModels albumModel = gson.fromJson(finalObject.toString(), AlbumModels.class);
-                    albumModelsList.add(albumModel);
+                for(AlbumModels album : albumModelsList){
+                    Log.e("JSON", "Author: "+album.getAuthor());
+                    Log.e("JSON", "Followers: "+album.getFollowers());
+                    Log.e("JSON", "Cover: "+album.getCover());
+                    Log.e("JSON", "Title: "+album.getCollectionTitle());
+                    Log.e("JSON", "------------------------------------");
                 }
+
                 return albumModelsList;
 
             }catch (MalformedURLException e){
-                e.printStackTrace();
+                Log.e("Erro",e.getMessage());
             }catch (IOException e){
-                e.printStackTrace();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } finally {
+                Log.e("Erro",e.getMessage());
+            }
+
+            finally {
                 if(connection != null){
                     connection.disconnect();
                 }
@@ -106,13 +104,15 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
+
         protected void onPostExecute(final List<AlbumModels> result) {
             super.onPostExecute(result);
             AlbumsAdapter adapter = new AlbumsAdapter(getApplicationContext(), R.layout.tela1, result);
             lvAlbums.setAdapter(adapter);
+
         }
     }
-
+    //criando o Adapter para poder assimilar os objetos java vindos do JSON com a lista
     public class AlbumsAdapter extends ArrayAdapter{
         private int resource;
         private LayoutInflater inflater;
@@ -123,6 +123,7 @@ public class MainActivity extends AppCompatActivity {
             this.resource = resource;
             inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
         }
+
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             ViewHolder holder = null;
@@ -130,24 +131,28 @@ public class MainActivity extends AppCompatActivity {
             if(convertView == null){
                 holder = new ViewHolder();
                 convertView = inflater.inflate(resource, null);
-                holder.ivAlbum = (ImageView)findViewById(R.id.ivAlbum);
-                holder.tvAlbum = (TextView)findViewById(R.id.tvAlbum);
-                holder.tvAuthor = (TextView)findViewById(R.id.tvAuthor);
-                holder.tvFollowers = (TextView)findViewById(R.id.tvFollowers);
+                holder.ivAlbum = (ImageView)convertView.findViewById(R.id.ivAlbum);
+                holder.tvAlbum = (TextView)convertView.findViewById(R.id.tvAlbum);
+                holder.tvAuthor = (TextView)convertView.findViewById(R.id.tvAuthor);
+                holder.tvFollowers = (TextView)convertView.findViewById(R.id.tvFollowers);
                 convertView.setTag(holder);
             }else{
                 holder = (ViewHolder) convertView.getTag();
             }
 
-
             holder.tvAlbum.setText(albumsModelList.get(position).getCollectionTitle());
             holder.tvAuthor.setText(albumsModelList.get(position).getAuthor());
             holder.tvFollowers.setText(albumsModelList.get(position).getFollowers());
 
-
             return convertView;
         }
 
+        @Override
+        public int getCount() {
+            return albumsModelList.size();
+        }
+
+        //implementando um ViewHolder para a lista carregar mais rápido e não travar
         class ViewHolder{
             private ImageView ivAlbum;
             private TextView tvAlbum;
@@ -155,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
             private TextView tvFollowers;
         }
     }
-
+    //implementando menu com o Refresh
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -163,7 +168,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         //noinspection SimplifiableIfStatement
