@@ -1,7 +1,9 @@
 package com.example.fernanda.albumdemusicas;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,12 +12,20 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.squareup.picasso.Callback;
+import com.squareup.picasso.Picasso;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +49,19 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         lvAlbums = (ListView)findViewById(R.id.lvAlbums);
+        lvAlbums.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                ListAdapter adapter = lvAlbums.getAdapter();
+                if(adapter instanceof AlbumsAdapter){
+                    AlbumModels album = ((AlbumsAdapter) adapter).getItem(position);
+                    if(album != null){
+                        Intent intent = new Intent(view.getContext(), DetailsActivity.class);
+                        startActivity(intent);
+                    }
+                }
+            }
+        });
 
         new JSONtask().execute(URL_TO_HIT);
 
@@ -115,19 +138,20 @@ public class MainActivity extends AppCompatActivity {
     //criando o Adapter para poder assimilar os objetos java vindos do JSON com a lista
     public class AlbumsAdapter extends ArrayAdapter{
         private int resource;
+        private Context context;
+        private ViewHolder holder;
         private LayoutInflater inflater;
         public List<AlbumModels> albumsModelList;
         public AlbumsAdapter(Context context, int resource, List<AlbumModels> objects) {
             super(context, resource, objects);
             albumsModelList = objects;
+            this.context = context;
             this.resource = resource;
             inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
         }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            ViewHolder holder = null;
-
             if(convertView == null){
                 holder = new ViewHolder();
                 convertView = inflater.inflate(resource, null);
@@ -135,6 +159,8 @@ public class MainActivity extends AppCompatActivity {
                 holder.tvAlbum = (TextView)convertView.findViewById(R.id.tvAlbum);
                 holder.tvAuthor = (TextView)convertView.findViewById(R.id.tvAuthor);
                 holder.tvFollowers = (TextView)convertView.findViewById(R.id.tvFollowers);
+                holder.progressBar = (ProgressBar) convertView.findViewById(R.id.progressBar);
+                ///holder.lnContainer = (LinearLayout) convertView.findViewById(R.id.lnContainer);
                 convertView.setTag(holder);
             }else{
                 holder = (ViewHolder) convertView.getTag();
@@ -144,6 +170,23 @@ public class MainActivity extends AppCompatActivity {
             holder.tvAuthor.setText(albumsModelList.get(position).getAuthor());
             holder.tvFollowers.setText(albumsModelList.get(position).getFollowers());
 
+            Picasso
+                    .with(context)
+                    .load(albumsModelList.get(position).getCover())
+                    .into(holder.ivAlbum, new Callback() {
+                        @Override
+                        public void onSuccess() {
+                            if(holder.progressBar.getVisibility() == View.VISIBLE){
+                                holder.progressBar.setVisibility(View.GONE);
+                            }
+                        }
+
+                        @Override
+                        public void onError() {
+
+                        }
+                    });
+
             return convertView;
         }
 
@@ -152,12 +195,22 @@ public class MainActivity extends AppCompatActivity {
             return albumsModelList.size();
         }
 
+        public AlbumModels getItem(int position){
+            if(albumsModelList.size() > position){
+                return albumsModelList.get(position);
+            }
+            return  null;
+
+        }
+
         //implementando um ViewHolder para a lista carregar mais rápido e não travar
         class ViewHolder{
             private ImageView ivAlbum;
             private TextView tvAlbum;
             private TextView tvAuthor;
             private TextView tvFollowers;
+            private ProgressBar progressBar;
+            private LinearLayout lnContainer;
         }
     }
     //implementando menu com o Refresh
